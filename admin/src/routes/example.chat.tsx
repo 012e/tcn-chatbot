@@ -1,156 +1,116 @@
-import { useEffect, useRef, useState } from "react";
+"use client";
+
+import { useLayoutEffect, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Send } from "lucide-react";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize from "rehype-sanitize";
 import rehypeHighlight from "rehype-highlight";
 import remarkGfm from "remark-gfm";
-import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
-import { Card } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-
-import type { UIMessage } from "ai";
-
-function InitialLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex flex-1 justify-center px-4 h-full">
-      <Card className="p-6 mx-auto w-full max-w-3xl text-center bg-background">
-        <p className="mx-auto mb-6 w-2/3 text-lg text-muted-foreground">
-          You can ask me about anything, I might or might not have a good
-          answer, but you can still ask.
-        </p>
-        {children}
-      </Card>
-    </div>
-  );
-}
-
-function ChattingLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="absolute right-0 bottom-0 left-64 border-t bg-background/80 backdrop-blur-sm border-orange-500/10">
-      <div className="py-3 px-4 mx-auto w-full max-w-3xl">{children}</div>
-    </div>
-  );
-}
-
-function Messages({ messages }: { messages: Array<UIMessage> }) {
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (messagesContainerRef.current) {
-      messagesContainerRef.current.scrollTop =
-        messagesContainerRef.current.scrollHeight;
-    }
-  }, [messages]);
-
-  if (!messages.length) return null;
-
-  return (
-    <ScrollArea ref={messagesContainerRef} className="flex-1 pb-24">
-      <div className="px-4 mx-auto space-y-3 w-full max-w-3xl">
-        {messages.map(({ id, role, parts }) => (
-          <Card
-            key={id}
-            className={
-              role === "assistant"
-                ? "bg-gradient-to-r from-orange-500/5 to-red-600/5"
-                : ""
-            }
-          >
-            <div className="flex gap-4 items-start p-4">
-              <Avatar>
-                <AvatarFallback>
-                  {role === "assistant" ? "AI" : "Y"}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                {parts.map((part, index) =>
-                  part.type === "text" ? (
-                    <div
-                      key={index}
-                      className="max-w-none prose dark:prose-invert"
-                    >
-                      <ReactMarkdown
-                        rehypePlugins={[
-                          rehypeRaw,
-                          rehypeSanitize,
-                          rehypeHighlight,
-                        ]}
-                        remarkPlugins={[remarkGfm]}
-                      >
-                        {part.text}
-                      </ReactMarkdown>
-                    </div>
-                  ) : null,
-                )}
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
-    </ScrollArea>
-  );
-}
 
 function ChatPage() {
-  const { messages, sendMessage } = useChat({
+  const { messages, sendMessage, status } = useChat({
     transport: new DefaultChatTransport({
       api: import.meta.env.VITE_CHAT_ENDPOINT,
     }),
   });
-  const [input, setInput] = useState("");
 
-  const Layout = messages.length ? ChattingLayout : InitialLayout;
+  const [input, setInput] = useState("");
+  const messagesContainerRef = useRef<HTMLDivElement | null>(null);
+
+  // Scroll the messages container to bottom after DOM updates
+  useLayoutEffect(() => {
+    const el = messagesContainerRef.current;
+    if (!el) return;
+    // schedule after layout/paint to ensure accurate scrollHeight
+    requestAnimationFrame(() => {
+      el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    });
+  }, [messages]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim()) return;
+    sendMessage({ text: input });
+    setInput("");
+  };
 
   return (
-    <div className="flex relative bg-background h-[calc(100vh-32px)]">
-      <div className="flex flex-col flex-1">
-        <Messages messages={messages} />
-        <Layout>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              sendMessage({ text: input });
-              setInput("");
-            }}
-          >
-            <Textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Type something clever (or don't, we won't judge)..."
-              rows={1}
-              style={{ minHeight: "44px", maxHeight: "200px" }}
-              onInput={(e) => {
-                const target = e.target as HTMLTextAreaElement;
-                target.style.height = "auto";
-                target.style.height = Math.min(target.scrollHeight, 200) + "px";
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  sendMessage({ text: input });
-                  setInput("");
-                }
-              }}
-              className="pr-12 resize-none"
-            />
-            <Button
-              type="submit"
-              size="icon"
-              variant="ghost"
-              disabled={!input.trim()}
-              className="absolute right-2 top-1/2 -translate-y-1/2"
+    <div className="flex flex-col w-full h-full min-h-0">
+      <div
+        ref={messagesContainerRef}
+        className="overflow-y-auto flex-1 p-4 mb-16 min-h-0"
+        id="chat-messages"
+      >
+        {messages.map(({ id, role, parts }) => {
+          const isAssistant = role === "assistant";
+          return (
+            <div
+              key={id}
+              className={`my-2 flex ${isAssistant ? "justify-start" : "justify-end"}`}
             >
-              <Send className="w-4 h-4" />
-            </Button>
-          </form>
-        </Layout>
+              <div
+                className={`px-4 py-2 rounded-lg max-w-[80%] whitespace-pre-wrap break-words ${
+                  isAssistant
+                    ? "bg-gradient-to-r from-purple-100 to-purple-200 text-purple-900"
+                    : "bg-gradient-to-r from-blue-500 to-blue-600 text-white"
+                }`}
+              >
+                {parts.map((part, i) =>
+                  part.type === "text" ? (
+                    <ReactMarkdown
+                      key={i}
+                      className="max-w-none prose prose-sm"
+                      rehypePlugins={[
+                        rehypeRaw,
+                        rehypeSanitize,
+                        rehypeHighlight,
+                      ]}
+                      remarkPlugins={[remarkGfm]}
+                    >
+                      {part.text}
+                    </ReactMarkdown>
+                  ) : null,
+                )}
+              </div>
+            </div>
+          );
+        })}
+
+        {status === "submitted" && (
+          <div className="text-sm text-gray-500">Loading...</div>
+        )}
       </div>
+
+      {/* Fixed input bar (only this is fixed to the bottom of the screen).
+          h-16 is used for a consistent height; messages container has pb-16. */}
+      <form
+        onSubmit={handleSubmit}
+        className="flex fixed right-0 bottom-0 left-0 z-50 gap-2 items-center py-3 px-4 h-16 bg-white border-t"
+      >
+        <input
+          className="flex py-2 px-3 w-full h-10 text-sm placeholder-gray-500 rounded-md border border-gray-300 focus:ring-2 focus:ring-gray-400 focus:outline-none"
+          placeholder="Type a message..."
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              handleSubmit(e);
+            }
+          }}
+        />
+        <button
+          type="submit"
+          className="flex justify-center items-center py-2 px-4 h-10 text-white bg-blue-500 rounded-md hover:bg-blue-600 disabled:opacity-50"
+          disabled={!input.trim()}
+        >
+          <Send size={18} />
+        </button>
+      </form>
     </div>
   );
 }

@@ -1,51 +1,61 @@
-import { Link } from '@tanstack/react-router'
+import { Link } from "@tanstack/react-router";
+import ClerkHeader from "../integrations/clerk/header-user.tsx";
+import TanStackChatHeaderUser from "../integrations/tanchat/header-user.tsx";
 
-import ClerkHeader from '../integrations/clerk/header-user.tsx'
-
-import TanStackChatHeaderUser from '../integrations/tanchat/header-user.tsx'
+import {
+  NavigationMenu,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+} from "@/components/ui/navigation-menu";
+import { navigationMenuTriggerStyle } from "@/components/ui/navigation-menu";
 
 export default function Header() {
   return (
-    <header className="p-2 flex gap-2 bg-white text-black justify-between">
-      <nav className="flex flex-row">
-        <div className="px-2 font-bold">
-          <Link to="/">Home</Link>
-        </div>
+    <header className="flex sticky top-0 z-50 justify-between items-center px-4 w-full h-16 border-b md:px-6 shrink-0 bg-background">
+      <NavigationMenu>
+        <NavigationMenuList>
+          <NavigationMenuItem>
+            <NavigationMenuLink asChild>
+              <Link to="/" className={navigationMenuTriggerStyle()}>
+                Home
+              </Link>
+            </NavigationMenuLink>
+          </NavigationMenuItem>
 
-        <div className="px-2 font-bold">
-          <Link to="/demo/start/server-funcs">Start - Server Functions</Link>
-        </div>
+          <NavigationMenuItem>
+            <NavigationMenuLink asChild>
+              <Link
+                to="/demo/tanstack-query"
+                className={navigationMenuTriggerStyle()}
+              >
+                TanStack Query
+              </Link>
+            </NavigationMenuLink>
+          </NavigationMenuItem>
 
-        <div className="px-2 font-bold">
-          <Link to="/demo/start/api-request">Start - API Request</Link>
-        </div>
+          <NavigationMenuItem>
+            <NavigationMenuLink asChild>
+              <Link to="/example/chat" className={navigationMenuTriggerStyle()}>
+                Chat
+              </Link>
+            </NavigationMenuLink>
+          </NavigationMenuItem>
 
-        <div className="px-2 font-bold">
-          <Link to="/demo/clerk">Clerk</Link>
-        </div>
+          <NavigationMenuItem>
+            <NavigationMenuLink asChild>
+              <Link to="/demo/store" className={navigationMenuTriggerStyle()}>
+                Store
+              </Link>
+            </NavigationMenuLink>
+          </NavigationMenuItem>
+        </NavigationMenuList>
+      </NavigationMenu>
 
-        <div className="px-2 font-bold">
-          <Link to="/demo/tanstack-query">TanStack Query</Link>
-        </div>
-
-        <div className="px-2 font-bold">
-          <Link to="/example/chat">Chat</Link>
-        </div>
-
-        <div className="px-2 font-bold">
-          <Link to="/example/guitars">Guitar Demo</Link>
-        </div>
-
-        <div className="px-2 font-bold">
-          <Link to="/demo/store">Store</Link>
-        </div>
-      </nav>
-
-      <div>
+      <div className="flex gap-2 items-center">
         <ClerkHeader />
-
         <TanStackChatHeaderUser />
       </div>
     </header>
-  )
+  );
 }

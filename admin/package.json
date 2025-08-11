@@ -15,6 +15,7 @@
     "@clerk/clerk-react": "^5.22.13",
     "@modelcontextprotocol/sdk": "^1.8.0",
     "@radix-ui/react-avatar": "^1.1.10",
+    "@radix-ui/react-navigation-menu": "^1.2.13",
     "@radix-ui/react-scroll-area": "^1.2.9",
     "@radix-ui/react-slot": "^1.2.3",
     "@tailwindcss/vite": "^4.0.6",
