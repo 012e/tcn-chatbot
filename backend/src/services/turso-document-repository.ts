@@ -5,7 +5,7 @@ import {
   DocumentRepository,
   DocumentListItem,
 } from "./document-repository";
-import type { CursorPage } from "@/helpers/types";
+import type { PageResult } from "@/helpers/types";
 
 export class TursoDocumentRepository implements DocumentRepository {
   public constructor(private readonly _db: Client) {}
@@ -106,55 +106,51 @@ export class TursoDocumentRepository implements DocumentRepository {
   }
 
   async listDocuments(params: {
-    limit: number;
-    cursor?: string | null;
-  }): Promise<CursorPage<DocumentListItem>> {
-    const { limit, cursor } = params;
-    const parsedLimit = Number(limit);
-    const pageSize = Number.isFinite(parsedLimit)
-      ? Math.max(1, Math.min(100, parsedLimit))
+    page: number;
+    pageSize: number;
+  }): Promise<PageResult<DocumentListItem>> {
+    const { page, pageSize } = params;
+
+    const currentPage = Number.isFinite(Number(page)) ? Math.max(1, Number(page)) : 1;
+    const size = Number.isFinite(Number(pageSize))
+      ? Math.max(1, Math.min(100, Number(pageSize)))
       : 20;
 
-    // Use numeric string cursor (last seen id). If invalid or missing, start from max (no WHERE)
-    let lastId = 0;
-    if (cursor != null && cursor !== "") {
-      const parsed = Number(cursor);
-      if (Number.isFinite(parsed) && parsed >= 0) lastId = parsed;
-    }
+    const offset = (currentPage - 1) * size;
 
-    // We page by descending id (newest first). If a cursor is provided, fetch items with id < lastId
-    const args: any[] = [];
-    let sql = `
-      SELECT id, content, created_at, updated_at
-      FROM documents
-    `;
-    if (lastId > 0) {
-      sql += ` WHERE id < ?`;
-      args.push(lastId);
-    }
-    sql += ` ORDER BY id DESC LIMIT ?`;
-    args.push(pageSize + 1); // fetch one extra to compute nextCursor
+    // Count total items
+    const countResult = await this._db.execute({
+      sql: `SELECT COUNT(*) as cnt FROM documents`,
+      args: [],
+    });
+    const totalItems = Number((countResult.rows[0] as any).cnt) || 0;
+    const totalPages = Math.max(1, Math.ceil(totalItems / size));
 
-    const result = await this._db.execute({ sql, args });
+    // Fetch the page
+    const result = await this._db.execute({
+      sql: `
+        SELECT id, content, created_at, updated_at
+        FROM documents
+        ORDER BY id DESC
+        LIMIT ? OFFSET ?
+      `,
+      args: [size, offset],
+    });
 
-    const rows = result.rows as any[];
-    const hasMore = rows.length > pageSize;
-    const itemsSlice = hasMore ? rows.slice(0, pageSize) : rows;
-
-    const items: DocumentListItem[] = itemsSlice.map((r) => ({
+    const items: DocumentListItem[] = (result.rows as any[]).map((r) => ({
       id: Number(r.id),
       content: String(r.content),
       createdAt: String(r.created_at),
       updatedAt: String(r.updated_at),
     }));
 
-    let nextCursor: string | null | undefined = null;
-    if (hasMore) {
-      const last = itemsSlice[itemsSlice.length - 1];
-      nextCursor = String(last.id);
-    }
-
-    return { items, nextCursor };
+    return {
+      items,
+      page: currentPage,
+      pageSize: size,
+      totalItems,
+      totalPages,
+    };
   }
 
   private mapRowToDocumentChunk(row: any): DocumentChunk {

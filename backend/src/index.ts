@@ -9,7 +9,7 @@ import dotenv from "dotenv";
 import { ChatBot } from "./services/openai-chatbot";
 import { cors } from "hono/cors";
 import { getConfig } from "./config";
-import type { CursorQuery } from "@/helpers/types";
+import type { PageQuery } from "@/helpers/types";
 dotenv.config({ path: ".env.local" });
 
 const app = new Hono().use(logger()).use(cors()).basePath("/api");
@@ -94,20 +94,20 @@ app.post("/document", async (c) => {
   );
 });
 
-// List documents with cursor pagination
+// List documents with page pagination
 app.get("/document", async (c) => {
-  const { cursor, limit }: CursorQuery = {
-    cursor: c.req.query("cursor") ?? null,
-    limit: c.req.query("limit") ?? null,
+  const { page, pageSize }: PageQuery = {
+    page: c.req.query("page") ?? 1,
+    pageSize: c.req.query("pageSize") ?? 20,
   };
 
   const repo = new TursoDocumentRepository(db);
-  const page = await repo.listDocuments({
-    cursor,
-    limit: limit == null ? 20 : Number(limit),
+  const result = await repo.listDocuments({
+    page: Number(page) || 1,
+    pageSize: Number(pageSize) || 20,
   });
 
-  return c.json(page);
+  return c.json(result);
 });
 
 // Delete a single document by id

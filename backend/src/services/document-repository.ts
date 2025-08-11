@@ -1,4 +1,4 @@
-import type { CursorPage } from "@/helpers/types";
+import type { PageResult } from "@/helpers/types";
 
 export type DocumentCreateDto = {
   content: string;
@@ -44,7 +44,7 @@ export interface DocumentRepository {
   ): Promise<DocumentChunk[]>;
   deleteDocument(id: number): Promise<boolean>;
   listDocuments(params: {
-    limit: number;
-    cursor?: string | null;
-  }): Promise<CursorPage<DocumentListItem>>;
+    page: number;
+    pageSize: number;
+  }): Promise<PageResult<DocumentListItem>>;
 }

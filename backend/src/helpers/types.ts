@@ -1,9 +1,12 @@
-export type CursorPage<T> = {
+export type PageResult<T> = {
   items: T[];
-  nextCursor?: string | null;
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
 };
 
-export type CursorQuery = {
-  cursor?: string | null;
-  limit?: number | string | null;
+export type PageQuery = {
+  page?: number | string | null;
+  pageSize?: number | string | null;
 };
