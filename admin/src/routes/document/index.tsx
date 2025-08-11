@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import z from "zod";
-import { listDocuments, type Document } from "@/lib/api";
+import { listDocuments, type Document, deleteDocument } from "@/lib/api";
 import {
   Table,
   TableBody,
@@ -11,20 +11,44 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import * as React from "react";
+import { toast } from "sonner";
+import { Trash } from "lucide-react";
 
 export const Route = createFileRoute("/document/")({
   validateSearch: z.object({
     page: z.coerce.number().int().min(1).catch(1),
     pageSize: z.coerce.number().int().min(1).max(100).catch(20),
+    id: z.coerce.number().int().optional().catch(undefined),
   }),
   component: RouteComponent,
 });
 
+function stripHtmlTags(htmlString: string) {
+  return htmlString.replace(/<[^>]*>/g, "");
+}
+
 function RouteComponent() {
   const navigate = useNavigate({ from: Route.fullPath });
-  const search = Route.useSearch();
-  const page = (search as { page?: number }).page ?? 1;
-  const pageSize = (search as { pageSize?: number }).pageSize ?? 20;
+  const queryClient = useQueryClient();
+  const { page, pageSize, id: selectedId } = Route.useSearch();
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["documents", { page, pageSize }],
@@ -36,6 +60,13 @@ function RouteComponent() {
   const totalPages = data?.totalPages ?? 1;
   const totalItems = data?.totalItems ?? 0;
 
+  const docFromUrl = React.useMemo(
+    () => items.find((d) => d.id === selectedId),
+    [items, selectedId],
+  );
+
+  const [docToDelete, setDocToDelete] = React.useState<Document | null>(null);
+
   const goTo = (nextPage: number, nextPageSize = pageSize) =>
     navigate({
       search: (prev) => ({
@@ -45,6 +76,49 @@ function RouteComponent() {
       }),
     });
 
+  const onSelect = (doc: Document) =>
+    navigate({
+      search: (prev) => ({ ...prev, id: doc.id }),
+    });
+
+  const onCloseDialog = () =>
+    navigate({
+      search: (prev) => ({ ...prev, id: undefined }),
+    });
+
+  const onOpenDeleteDialog = (e: React.MouseEvent, doc: Document) => {
+    e.stopPropagation();
+    setDocToDelete(doc);
+  };
+
+  const handleDeleteConfirmed = async () => {
+    if (!docToDelete) return;
+
+    const deletePromise = deleteDocument(docToDelete.id);
+    toast.promise(deletePromise, {
+      loading: "Đang xóa tài liệu...",
+      success: "Tài liệu đã được xóa",
+      error: (err) => `Xóa tài liệu thất bại: ${err.message}`,
+    });
+
+    await deletePromise;
+    const updateDataPromise = queryClient.invalidateQueries({
+      queryKey: ["documents"],
+    });
+    toast.promise(updateDataPromise, {
+      loading: "Đang cập nhật danh sách tài liệu...",
+      success: "Danh sách tài liệu đã được cập nhật",
+      error: (err) => `Cập nhật danh sách thất bại: ${err.message}`,
+    });
+    navigate({
+      search: (prev) => ({
+        ...prev,
+        id: prev?.id === docToDelete.id ? undefined : prev?.id,
+      }),
+    });
+    setDocToDelete(null);
+  };
+
   if (isLoading) return <div className="p-6">Loading...</div>;
   if (isError)
     return (
@@ -52,63 +126,96 @@ function RouteComponent() {
     );
 
   return (
-    <div className="flex flex-col gap-4 p-6">
-      <div className="flex items-center justify-between gap-2">
-        <h1 className="text-2xl font-bold tracking-tight">Tài liệu</h1>
-        <div className="text-sm text-muted-foreground">Tổng: {totalItems}</div>
+    <div className="flex flex-col gap-4 p-6 bg-background text-foreground">
+      <div className="flex gap-2 justify-between items-begin">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Tài liệu</h1>
+          <div className="text-sm text-muted-foreground">
+            Tổng: {totalItems}
+          </div>
+        </div>
+        <Button
+          onClick={() => navigate({ to: "/document/new" })}
+          className="h-9 text-white bg-green-400 transition-colors cursor-pointer hover:bg-green-500"
+        >
+          Tạo mới
+        </Button>
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[80px]">ID</TableHead>
-            <TableHead>Nội dung</TableHead>
-            <TableHead className="w-[180px]">Thời gian tạo</TableHead>
-            <TableHead className="w-[180px]">Thời gian cập nhật</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {items.map((doc: Document) => (
-            <TableRow key={doc.id}>
-              <TableCell className="font-mono text-xs">{doc.id}</TableCell>
-              <TableCell>
-                <div className="max-w-[700px] truncate" title={doc.content}>
-                  {doc.content}
-                </div>
-              </TableCell>
-              <TableCell className="text-xs text-muted-foreground">
-                {new Date(doc.createdAt).toLocaleString()}
-              </TableCell>
-              <TableCell className="text-xs text-muted-foreground">
-                {new Date(doc.updatedAt).toLocaleString()}
-              </TableCell>
-            </TableRow>
-          ))}
-          {items.length === 0 && (
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
             <TableRow>
-              <TableCell
-                colSpan={4}
-                className="text-center text-muted-foreground"
-              >
-                No documents found
-              </TableCell>
+              <TableHead className="w-[80px]">ID</TableHead>
+              <TableHead>Nội dung</TableHead>
+              <TableHead className="w-[180px]">Ngày tạo</TableHead>
+              <TableHead className="w-[180px]">Ngày cập nhật</TableHead>
+              <TableHead className="text-right w-[100px]"></TableHead>
             </TableRow>
-          )}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {items.map((doc: Document) => {
+              const strippedContent = stripHtmlTags(doc.content);
+              return (
+                <TableRow
+                  key={doc.id}
+                  onClick={() => onSelect(doc)}
+                  className="cursor-pointer transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
+                  data-state={selectedId === doc.id ? "selected" : "unselected"}
+                >
+                  <TableCell className="font-mono text-xs">{doc.id}</TableCell>
+                  <TableCell>
+                    <div
+                      className="max-w-[700px] truncate"
+                      title={strippedContent}
+                    >
+                      {strippedContent}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {new Date(doc.createdAt).toLocaleString()}
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {new Date(doc.updatedAt).toLocaleString()}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="cursor-pointer"
+                      onClick={(e) => onOpenDeleteDialog(e, doc)}
+                    >
+                      Xóa <Trash className="size-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+            {items.length === 0 && (
+              <TableRow>
+                <TableCell
+                  colSpan={5}
+                  className="h-24 text-center text-muted-foreground"
+                >
+                  No documents found.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-wrap gap-4 justify-between items-center">
+        <div className="flex gap-2 items-center">
           <Button
             variant="outline"
             onClick={() => goTo(page - 1)}
             disabled={page <= 1}
           >
-            Previous
+            Trước
           </Button>
           <div className="text-sm">
-            Page{" "}
-            <span className="font-medium">{page}</span> of
+            Trang <span className="font-medium">{page}</span> /{" "}
             <span className="font-medium"> {totalPages}</span>
           </div>
           <Button
@@ -116,17 +223,17 @@ function RouteComponent() {
             onClick={() => goTo(page + 1)}
             disabled={page >= totalPages}
           >
-            Next
+            Tiếp
           </Button>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex gap-2 items-center">
           <label htmlFor="pageSize" className="text-sm text-muted-foreground">
-            Rows per page
+            Kích thước trang:
           </label>
           <select
             id="pageSize"
-            className="h-9 rounded-md border border-input bg-transparent px-2 text-sm"
+            className="px-2 h-9 text-sm bg-transparent rounded-md border focus:ring-2 focus:ring-offset-2 focus:outline-none border-input focus:ring-ring focus:ring-offset-background"
             value={pageSize}
             onChange={(e) => goTo(1, Number(e.target.value))}
           >
@@ -138,6 +245,53 @@ function RouteComponent() {
           </select>
         </div>
       </div>
+
+      <Dialog
+        open={!!selectedId}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) {
+            onCloseDialog();
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-3xl">
+          {docFromUrl && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Document #{docFromUrl.id}</DialogTitle>
+              </DialogHeader>
+              <Textarea
+                value={stripHtmlTags(docFromUrl.content)}
+                readOnly
+                className="min-h-64 bg-muted/20"
+              />
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog
+        open={!!docToDelete}
+        onOpenChange={() => {
+          setDocToDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Bạn có chắc chắn không?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Hành động này không thể hoàn tác. Tài liệu sẽ bị xóa vĩnh viễn và
+              toàn bộ dữ liệu của nó sẽ bị xóa khỏi máy chủ của chúng tôi.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirmed}>
+              Tiếp tục
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

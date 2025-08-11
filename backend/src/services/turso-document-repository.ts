@@ -12,6 +12,7 @@ export class TursoDocumentRepository implements DocumentRepository {
 
   async saveDocument(document: DocumentCreateDto): Promise<void> {
     const transaction = await this._db.transaction("write");
+
     try {
       const documentResult = await transaction.execute({
         sql: "INSERT INTO documents (content, created_at, updated_at) VALUES (?, ?, ?) RETURNING id",
@@ -111,7 +112,9 @@ export class TursoDocumentRepository implements DocumentRepository {
   }): Promise<PageResult<DocumentListItem>> {
     const { page, pageSize } = params;
 
-    const currentPage = Number.isFinite(Number(page)) ? Math.max(1, Number(page)) : 1;
+    const currentPage = Number.isFinite(Number(page))
+      ? Math.max(1, Number(page))
+      : 1;
     const size = Number.isFinite(Number(pageSize))
       ? Math.max(1, Math.min(100, Number(pageSize)))
       : 20;

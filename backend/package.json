@@ -16,12 +16,17 @@
     "ai": "5.0.0-beta.34",
     "axios": "^1.11.0",
     "dedent": "^1.6.0",
+    "dompurify": "^3.2.6",
     "dotenv": "^17.2.1",
     "hono": "^4.9.0",
+    "isomorphic-dompurify": "^2.26.0",
+    "jsdom": "^26.1.0",
     "langchain": "^0.3.30",
+    "sanitize-html": "^2.17.0",
     "zod": "^4.0.15"
   },
   "devDependencies": {
+    "@types/sanitize-html": "^2.16.0",
     "tsx": "^4.20.3",
     "wrangler": "^4.4.0"
   }

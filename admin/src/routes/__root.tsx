@@ -4,13 +4,10 @@ import {
   createRootRouteWithContext,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
-
+import { Toaster } from "@/components/ui/sonner";
 import Header from "../components/Header";
-
 import ClerkProvider from "../integrations/clerk/provider.tsx";
-
 import TanStackQueryLayout from "../integrations/tanstack-query/layout.tsx";
-
 import appCss from "../styles.css?url";
 
 import type { QueryClient } from "@tanstack/react-query";
@@ -56,6 +53,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           {children}
           <TanStackRouterDevtools />
           <TanStackQueryLayout />
+          <Toaster expand={true} />
         </ClerkProvider>
         <Scripts />
       </body>

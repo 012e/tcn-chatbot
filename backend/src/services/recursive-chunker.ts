@@ -16,7 +16,7 @@ export class RecursiveChunker implements Chunker {
       chunkOverlap: 200,
     },
   ): Promise<Chunk[]> {
-    const splitter = new RecursiveCharacterTextSplitter({
+    const splitter = RecursiveCharacterTextSplitter.fromLanguage("html", {
       chunkSize: options.chunkSize,
       chunkOverlap: options.chunkOverlap ?? 0,
     });

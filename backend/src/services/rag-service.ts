@@ -3,12 +3,12 @@ import {
   DocumentCreateDto,
   DocumentChunkCreateDto,
   DocumentRepository,
-  Document,
   DocumentChunk,
 } from "./document-repository";
 import { embed } from "ai";
 import { openai } from "@ai-sdk/openai";
 import z from "zod";
+import sanitizeHtml from "sanitize-html";
 
 export type InsertDocumentCommand = z.infer<typeof InsertDocumentSchema>;
 
@@ -68,6 +68,13 @@ export class RagService {
   }
 
   async insertDocument(document: InsertDocumentCommand): Promise<void> {
+    document.content = sanitizeHtml(document.content, {
+      allowedAttributes: {
+        a: ["href", "title"],
+        img: ["src", "alt"],
+      },
+    });
+
     const chunks = await this._chunker.chunk(document.content);
     const embeddedChunks = await this._embedChunks(
       chunks.map((chunk: Chunk) => chunk.content),
