@@ -10,6 +10,7 @@ import rehypeRaw from "rehype-raw";
 import rehypeSanitize from "rehype-sanitize";
 import rehypeHighlight from "rehype-highlight";
 import remarkGfm from "remark-gfm";
+import { v4 as uuidv4 } from "uuid";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -56,10 +57,10 @@ function ChatPage() {
                     : "bg-secondary text-secondary-foreground",
                 )}
               >
-                {parts.map((part, i) =>
+                {parts.map((part, index) =>
                   part.type === "text" ? (
                     <ReactMarkdown
-                      key={i}
+                      key={`${id}-${index}`}
                       className="max-w-none break-words prose prose-sm dark:prose-invert"
                       rehypePlugins={[
                         rehypeRaw,

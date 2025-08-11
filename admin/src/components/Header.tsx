@@ -1,6 +1,5 @@
 import { Link } from "@tanstack/react-router";
 import ClerkHeader from "../integrations/clerk/header-user.tsx";
-import TanStackChatHeaderUser from "../integrations/tanchat/header-user.tsx";
 
 import {
   NavigationMenu,
@@ -18,18 +17,7 @@ export default function Header() {
           <NavigationMenuItem>
             <NavigationMenuLink asChild>
               <Link to="/" className={navigationMenuTriggerStyle()}>
-                Home
-              </Link>
-            </NavigationMenuLink>
-          </NavigationMenuItem>
-
-          <NavigationMenuItem>
-            <NavigationMenuLink asChild>
-              <Link
-                to="/demo/tanstack-query"
-                className={navigationMenuTriggerStyle()}
-              >
-                TanStack Query
+                Tài liệu
               </Link>
             </NavigationMenuLink>
           </NavigationMenuItem>
@@ -41,20 +29,11 @@ export default function Header() {
               </Link>
             </NavigationMenuLink>
           </NavigationMenuItem>
-
-          <NavigationMenuItem>
-            <NavigationMenuLink asChild>
-              <Link to="/demo/store" className={navigationMenuTriggerStyle()}>
-                Store
-              </Link>
-            </NavigationMenuLink>
-          </NavigationMenuItem>
         </NavigationMenuList>
       </NavigationMenu>
 
       <div className="flex gap-2 items-center">
         <ClerkHeader />
-        <TanStackChatHeaderUser />
       </div>
     </header>
   );
