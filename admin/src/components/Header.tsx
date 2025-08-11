@@ -29,6 +29,14 @@ export default function Header() {
               </Link>
             </NavigationMenuLink>
           </NavigationMenuItem>
+
+          <NavigationMenuItem>
+            <NavigationMenuLink asChild>
+              <Link to="/document" className={navigationMenuTriggerStyle()}>
+                Tài liệu
+              </Link>
+            </NavigationMenuLink>
+          </NavigationMenuItem>
         </NavigationMenuList>
       </NavigationMenu>
 

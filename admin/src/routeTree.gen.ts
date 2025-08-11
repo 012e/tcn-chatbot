@@ -10,11 +10,17 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DocumentIndexRouteImport } from './routes/document/index'
 import { Route as ExampleChatRouteImport } from './routes/example.chat'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocumentIndexRoute = DocumentIndexRouteImport.update({
+  id: '/document/',
+  path: '/document/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ExampleChatRoute = ExampleChatRouteImport.update({
@@ -26,27 +32,31 @@ const ExampleChatRoute = ExampleChatRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/example/chat': typeof ExampleChatRoute
+  '/document': typeof DocumentIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/example/chat': typeof ExampleChatRoute
+  '/document': typeof DocumentIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/example/chat': typeof ExampleChatRoute
+  '/document/': typeof DocumentIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/example/chat'
+  fullPaths: '/' | '/example/chat' | '/document'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/example/chat'
-  id: '__root__' | '/' | '/example/chat'
+  to: '/' | '/example/chat' | '/document'
+  id: '__root__' | '/' | '/example/chat' | '/document/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ExampleChatRoute: typeof ExampleChatRoute
+  DocumentIndexRoute: typeof DocumentIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -56,6 +66,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/document/': {
+      id: '/document/'
+      path: '/document'
+      fullPath: '/document'
+      preLoaderRoute: typeof DocumentIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/example/chat': {
@@ -71,6 +88,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ExampleChatRoute: ExampleChatRoute,
+  DocumentIndexRoute: DocumentIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
