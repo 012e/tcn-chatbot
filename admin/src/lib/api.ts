@@ -40,7 +40,24 @@ export async function deleteDocument(id: number) {
   if (!res.ok) throw new Error(`Failed to delete document: ${res.status}`);
 }
 
-// Create a new document
+export async function fetchDocumentById(id: string): Promise<Document> {
+  return (await (await fetch(`${API_BASE}/document/${id}`)).json()) as Document;
+}
+
+export async function updateDocument({ id: documentId, content }: Document) {
+  const res = await fetch(`${API_BASE}/document/${documentId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content: content }),
+  });
+  if (res.status === 200) return;
+  const data = await res.json().catch(() => ({}));
+  const msg =
+    (data && (data.message || data.error)) ||
+    `Failed to update document: ${res.status}`;
+  throw new Error(msg);
+}
+
 export async function createDocument(input: { content: string }) {
   const res = await fetch(`${API_BASE}/document`, {
     method: "POST",

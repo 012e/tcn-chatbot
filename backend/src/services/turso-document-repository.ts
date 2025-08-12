@@ -3,12 +3,60 @@ import {
   DocumentChunk,
   DocumentCreateDto,
   DocumentRepository,
-  DocumentListItem,
+  SimpleDocument,
+  DocumentUpdateDto,
 } from "./document-repository";
 import type { PageResult } from "@/helpers/types";
 
 export class TursoDocumentRepository implements DocumentRepository {
   public constructor(private readonly _db: Client) {}
+
+  async getDocumentById(id: number): Promise<SimpleDocument | null> {
+    if (!Number.isInteger(id) || id <= 0) {
+      throw new Error("Invalid document id");
+    }
+
+    const result = await this._db.execute({
+      sql: `
+          SELECT d.id, d.content, d.created_at, d.updated_at
+          FROM documents d
+          WHERE d.id = ?
+        `,
+      args: [id],
+    });
+
+    if (result.rows.length !== 1) {
+      return null; // Document not found
+    }
+
+    const row = result.rows[0] as any;
+    return {
+      id: Number(row.id),
+      content: String(row.content),
+      createdAt: String(row.created_at),
+      updatedAt: String(row.updated_at),
+    };
+  }
+
+  async updateDocument(document: DocumentUpdateDto): Promise<void> {
+    if (!Number.isInteger(document.id) || document.id <= 0) {
+      throw new Error("Invalid document id");
+    }
+
+    try {
+      await this._db.execute({
+        sql: "UPDATE documents SET content = ?, updated_at = ? WHERE id = ?",
+        args: [document.content, document.updatedAt, document.id],
+      });
+    } catch (error) {
+      if (error instanceof LibsqlError) {
+        console.error("Database error updating document:", error.message);
+      } else {
+        console.error("An unexpected error occurred while updating:", error);
+      }
+      throw error;
+    }
+  }
 
   async saveDocument(document: DocumentCreateDto): Promise<void> {
     const transaction = await this._db.transaction("write");
@@ -47,11 +95,11 @@ export class TursoDocumentRepository implements DocumentRepository {
     try {
       const result = await this._db.execute({
         sql: `
-          SELECT id, chunk, metadata, document_id, embedding
-          FROM document_chunks
-          ORDER BY vector_distance_cos(embedding, vector32(?))
-          LIMIT ?
-        `,
+          SELECT id, chunk, metadata, document_id, embedding
+          FROM document_chunks
+          ORDER BY vector_distance_cos(embedding, vector32(?))
+          LIMIT ?
+        `,
         args: [JSON.stringify(documentVector), topK],
       });
 
@@ -76,7 +124,6 @@ export class TursoDocumentRepository implements DocumentRepository {
 
     const transaction = await this._db.transaction("write");
     try {
-      // First check if it exists
       const existing = await transaction.execute({
         sql: `SELECT id FROM documents WHERE id = ?`,
         args: [id],
@@ -87,7 +134,6 @@ export class TursoDocumentRepository implements DocumentRepository {
         return false; // not found
       }
 
-      // Delete the document (chunks are deleted via ON DELETE CASCADE)
       await transaction.execute({
         sql: `DELETE FROM documents WHERE id = ?`,
         args: [id],
@@ -109,7 +155,7 @@ export class TursoDocumentRepository implements DocumentRepository {
   async listDocuments(params: {
     page: number;
     pageSize: number;
-  }): Promise<PageResult<DocumentListItem>> {
+  }): Promise<PageResult<SimpleDocument>> {
     const { page, pageSize } = params;
 
     const currentPage = Number.isFinite(Number(page))
@@ -121,7 +167,6 @@ export class TursoDocumentRepository implements DocumentRepository {
 
     const offset = (currentPage - 1) * size;
 
-    // Count total items
     const countResult = await this._db.execute({
       sql: `SELECT COUNT(*) as cnt FROM documents`,
       args: [],
@@ -129,18 +174,17 @@ export class TursoDocumentRepository implements DocumentRepository {
     const totalItems = Number((countResult.rows[0] as any).cnt) || 0;
     const totalPages = Math.max(1, Math.ceil(totalItems / size));
 
-    // Fetch the page
     const result = await this._db.execute({
       sql: `
-        SELECT id, content, created_at, updated_at
-        FROM documents
-        ORDER BY id DESC
-        LIMIT ? OFFSET ?
-      `,
+        SELECT id, content, created_at, updated_at
+        FROM documents
+        ORDER BY id DESC
+        LIMIT ? OFFSET ?
+      `,
       args: [size, offset],
     });
 
-    const items: DocumentListItem[] = (result.rows as any[]).map((r) => ({
+    const items: SimpleDocument[] = (result.rows as any[]).map((r) => ({
       id: Number(r.id),
       content: String(r.content),
       createdAt: String(r.created_at),

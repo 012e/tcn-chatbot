@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as DocumentIndexRouteImport } from './routes/document/index'
 import { Route as ExampleChatRouteImport } from './routes/example.chat'
 import { Route as DocumentNewRouteImport } from './routes/document/new'
+import { Route as DocumentDocumentIdEditRouteImport } from './routes/document/$documentId.edit'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,18 +35,25 @@ const DocumentNewRoute = DocumentNewRouteImport.update({
   path: '/document/new',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DocumentDocumentIdEditRoute = DocumentDocumentIdEditRouteImport.update({
+  id: '/document/$documentId/edit',
+  path: '/document/$documentId/edit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/document/new': typeof DocumentNewRoute
   '/example/chat': typeof ExampleChatRoute
   '/document': typeof DocumentIndexRoute
+  '/document/$documentId/edit': typeof DocumentDocumentIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/document/new': typeof DocumentNewRoute
   '/example/chat': typeof ExampleChatRoute
   '/document': typeof DocumentIndexRoute
+  '/document/$documentId/edit': typeof DocumentDocumentIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +61,30 @@ export interface FileRoutesById {
   '/document/new': typeof DocumentNewRoute
   '/example/chat': typeof ExampleChatRoute
   '/document/': typeof DocumentIndexRoute
+  '/document/$documentId/edit': typeof DocumentDocumentIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/document/new' | '/example/chat' | '/document'
+  fullPaths:
+    | '/'
+    | '/document/new'
+    | '/example/chat'
+    | '/document'
+    | '/document/$documentId/edit'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/document/new' | '/example/chat' | '/document'
-  id: '__root__' | '/' | '/document/new' | '/example/chat' | '/document/'
+  to:
+    | '/'
+    | '/document/new'
+    | '/example/chat'
+    | '/document'
+    | '/document/$documentId/edit'
+  id:
+    | '__root__'
+    | '/'
+    | '/document/new'
+    | '/example/chat'
+    | '/document/'
+    | '/document/$documentId/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,6 +92,7 @@ export interface RootRouteChildren {
   DocumentNewRoute: typeof DocumentNewRoute
   ExampleChatRoute: typeof ExampleChatRoute
   DocumentIndexRoute: typeof DocumentIndexRoute
+  DocumentDocumentIdEditRoute: typeof DocumentDocumentIdEditRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -99,6 +125,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DocumentNewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/document/$documentId/edit': {
+      id: '/document/$documentId/edit'
+      path: '/document/$documentId/edit'
+      fullPath: '/document/$documentId/edit'
+      preLoaderRoute: typeof DocumentDocumentIdEditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -107,6 +140,7 @@ const rootRouteChildren: RootRouteChildren = {
   DocumentNewRoute: DocumentNewRoute,
   ExampleChatRoute: ExampleChatRoute,
   DocumentIndexRoute: DocumentIndexRoute,
+  DocumentDocumentIdEditRoute: DocumentDocumentIdEditRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
