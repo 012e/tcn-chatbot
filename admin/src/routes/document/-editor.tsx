@@ -88,26 +88,13 @@ function Editor({
   );
 
   return (
-    <main
-      style={{
-        padding: "0 20px",
-      }}
-    >
-      <div
-        style={{
-          maxWidth: 1024,
-          margin: "88px auto 120px",
-        }}
-      >
-        <RichTextEditor
-          output="html"
-          content={content as any}
-          onChangeContent={onValueChange}
-          extensions={extensions}
-          dark={theme === "dark"}
-        />
-      </div>
-    </main>
+    <RichTextEditor
+      output="html"
+      content={content as any}
+      onChangeContent={onValueChange}
+      extensions={extensions}
+      dark={theme === "dark"}
+    />
   );
 }
 

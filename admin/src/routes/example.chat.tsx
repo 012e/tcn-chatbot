@@ -10,11 +10,13 @@ import rehypeRaw from "rehype-raw";
 import rehypeSanitize from "rehype-sanitize";
 import rehypeHighlight from "rehype-highlight";
 import remarkGfm from "remark-gfm";
-import { v4 as uuidv4 } from "uuid";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+
+// NOTE: Ensure you have highlight.js CSS for syntax highlighting
+// For example, in your main CSS file: @import "highlight.js/styles/github-dark.css";
 
 function ChatPage() {
   const { messages, sendMessage, status } = useChat({
@@ -25,12 +27,27 @@ function ChatPage() {
 
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = "auto"; // Reset height to recalculate
+      const scrollHeight = textarea.scrollHeight;
+      const maxHeight = parseInt(textarea.style.maxHeight) || Infinity;
+      textarea.style.height = `${Math.min(scrollHeight, maxHeight)}px`;
+    }
+  }, [input]);
+
+  const handleFormSubmit = (
+    e:
+      | React.FormEvent<HTMLFormElement>
+      | React.KeyboardEvent<HTMLTextAreaElement>,
+  ) => {
     e.preventDefault();
     if (!input.trim()) return;
     sendMessage({ text: input });
@@ -38,9 +55,10 @@ function ChatPage() {
   };
 
   return (
-    <div className="flex flex-col bg-background text-foreground">
-      <div className="overflow-y-auto flex-1 p-4 mb-[5rem]">
-        <div className="flex flex-col space-y-4">
+    <div className="flex flex-col h-screen bg-background text-foreground">
+      {/* Message Area */}
+      <div className="overflow-y-auto flex-1 p-4 pb-24 md:p-6">
+        <div className="flex flex-col mx-auto space-y-4 max-w-4xl">
           {messages.map(({ id, role, parts }) => (
             <div
               key={id}
@@ -51,7 +69,7 @@ function ChatPage() {
             >
               <div
                 className={cn(
-                  "max-w-[70%] p-3 rounded-xl shadow-md",
+                  "max-w-[85%] rounded-lg px-3 py-2 text-sm shadow-md md:max-w-[75%] md:px-4 md:py-2",
                   role === "user"
                     ? "bg-primary text-primary-foreground"
                     : "bg-secondary text-secondary-foreground",
@@ -61,7 +79,7 @@ function ChatPage() {
                   part.type === "text" ? (
                     <ReactMarkdown
                       key={`${id}-${index}`}
-                      className="max-w-none break-words prose prose-sm dark:prose-invert"
+                      className="max-w-none break-words prose prose-sm prose-p:my-2 prose-pre:my-2 prose-pre:rounded-md prose-pre:bg-background/50 prose-pre:p-2 dark:prose-invert"
                       rehypePlugins={[
                         rehypeRaw,
                         rehypeSanitize,
@@ -78,36 +96,40 @@ function ChatPage() {
           ))}
           {status === "submitted" && (
             <div className="flex justify-start">
-              <div className="p-3 rounded-xl bg-secondary text-secondary-foreground">
-                <span className="animate-pulse">Thinking...</span>
+              <div className="py-2 px-4 rounded-lg shadow-md bg-secondary text-secondary-foreground">
+                <span className="animate-pulse">Đang suy nghĩ...</span>
               </div>
             </div>
           )}
           <div ref={messagesEndRef} />
         </div>
       </div>
-      <div className="fixed right-0 bottom-0 left-0 p-4 border-t bg-background">
+
+      {/* Input Form */}
+      <div className="fixed inset-x-0 bottom-0 border-t bg-background/80 pb-[env(safe-area-inset-bottom)] backdrop-blur-sm">
         <form
-          onSubmit={handleSubmit}
-          className="flex gap-2 mx-auto w-full max-w-4xl"
+          onSubmit={handleFormSubmit}
+          className="flex gap-2 items-end p-2 mx-auto w-full max-w-4xl md:p-4"
         >
           <Textarea
+            ref={textareaRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Type your message..."
-            className="flex-1 resize-none min-h-[40px] max-h-[120px]"
+            placeholder="Nhập gì đó..."
+            className="flex-1 max-h-48 resize-none"
+            style={{ maxHeight: "192px" }} // JS needs this for calculation
             rows={1}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                handleSubmit(e);
+                handleFormSubmit(e);
               }
             }}
           />
           <Button
             type="submit"
+            size="icon"
             disabled={!input.trim() || status === "submitted"}
-            className="h-auto"
+            className="w-9 h-9 md:w-10 md:h-10 shrink-0"
           >
             <Send size={18} />
             <span className="sr-only">Send message</span>

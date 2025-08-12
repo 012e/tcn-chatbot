@@ -18,10 +18,10 @@ function NewDocumentComponent() {
   const contentMutation = useMutation({
     mutationFn: createDocument,
     onError: (error) => {
-      toast.error(`Failed to create document: ${error.message}`);
+      toast.error(`Tạo tài liệu thất bại: ${error.message}`);
     },
     onSuccess: () => {
-      toast.success("Document created successfully!");
+      toast.success("Tạo tài liệu thành công!");
       navigate({ to: "/document", replace: true });
     },
   });
