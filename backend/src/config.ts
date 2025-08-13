@@ -8,7 +8,7 @@ const configSchema = z
     isDevelopment: z.boolean().default(false),
     openaiKey: z.string().nonempty(),
     embeddingModel: z.string().default("text-embedding-3-small"),
-    chatModel: z.string().default("gpt-4o-mini"),
+    chatModel: z.string().default("gpt-5-mini"),
     tursoDatabaseUrl: z.url().optional(),
     tursoAuthToken: z.string().nonempty().optional(),
   })

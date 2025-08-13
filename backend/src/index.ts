@@ -94,7 +94,6 @@ app.post("/document", async (c) => {
   );
 });
 
-// List documents with page pagination
 app.get("/document", async (c) => {
   const { page, pageSize }: PageQuery = {
     page: c.req.query("page") ?? 1,
@@ -110,7 +109,6 @@ app.get("/document", async (c) => {
   return c.json(result);
 });
 
-// Delete a single document by id
 app.delete("/document/:id", async (c) => {
   const idParam = c.req.param("id");
   const id = Number(idParam);

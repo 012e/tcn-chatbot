@@ -18,10 +18,10 @@ export class TursoDocumentRepository implements DocumentRepository {
 
     const result = await this._db.execute({
       sql: `
-          SELECT d.id, d.content, d.created_at, d.updated_at
-          FROM documents d
-          WHERE d.id = ?
-        `,
+          SELECT d.id, d.content, d.created_at, d.updated_at
+          FROM documents d
+          WHERE d.id = ?
+        `,
       args: [id],
     });
 
@@ -95,11 +95,11 @@ export class TursoDocumentRepository implements DocumentRepository {
     try {
       const result = await this._db.execute({
         sql: `
-          SELECT id, chunk, metadata, document_id, embedding
-          FROM document_chunks
-          ORDER BY vector_distance_cos(embedding, vector32(?))
-          LIMIT ?
-        `,
+          SELECT id, chunk, metadata, document_id, embedding
+          FROM document_chunks
+          ORDER BY vector_distance_cos(embedding, vector32(?))
+          LIMIT ?
+        `,
         args: [JSON.stringify(documentVector), topK],
       });
 
@@ -176,11 +176,12 @@ export class TursoDocumentRepository implements DocumentRepository {
 
     const result = await this._db.execute({
       sql: `
-        SELECT id, content, created_at, updated_at
-        FROM documents
-        ORDER BY id DESC
-        LIMIT ? OFFSET ?
-      `,
+        SELECT id, content, created_at, updated_at
+        FROM documents
+        ORDER BY id DESC
+        LIMIT ?
+        OFFSET ?
+      `,
       args: [size, offset],
     });
 
