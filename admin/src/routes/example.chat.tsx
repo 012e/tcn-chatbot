@@ -15,9 +15,6 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
-// NOTE: Ensure you have highlight.js CSS for syntax highlighting
-// For example, in your main CSS file: @import "highlight.js/styles/github-dark.css";
-
 function ChatPage() {
   const { messages, sendMessage, status } = useChat({
     transport: new DefaultChatTransport({

@@ -11,7 +11,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -31,6 +30,7 @@ import {
 import * as React from "react";
 import { toast } from "sonner";
 import { Trash } from "lucide-react";
+import dompurify from "dompurify";
 
 export const Route = createFileRoute("/document/")({
   validateSearch: z.object({
@@ -60,10 +60,15 @@ function RouteComponent() {
   const totalPages = data?.totalPages ?? 1;
   const totalItems = data?.totalItems ?? 0;
 
-  const docFromUrl = React.useMemo(
-    () => items.find((d) => d.id === selectedId),
-    [items, selectedId],
-  );
+  const docFromUrl = React.useMemo(() => {
+    const doc = items.find(
+      (d) => d.id === selectedId,
+    ) as (typeof items)[number] & { sanitizedContent: string };
+    if (!doc) return null;
+    doc.content = dompurify.sanitize(doc.content);
+    doc.sanitizedContent = doc.content;
+    return doc;
+  }, [items, selectedId]);
 
   const [docToDelete, setDocToDelete] = React.useState<Document | null>(null);
 
@@ -254,20 +259,21 @@ function RouteComponent() {
           }
         }}
       >
-        <DialogContent className="sm:max-w-3xl">
-          {docFromUrl && (
+        {docFromUrl && (
+          <DialogContent className="sm:max-w-3xl">
             <>
               <DialogHeader>
                 <DialogTitle>Document #{docFromUrl.id}</DialogTitle>
               </DialogHeader>
-              <Textarea
-                value={stripHtmlTags(docFromUrl.content)}
-                readOnly
-                className="min-h-64 bg-muted/20"
-              />
+              <div
+                dangerouslySetInnerHTML={{
+                  __html: docFromUrl.sanitizedContent,
+                }}
+              />{" "}
+              {/* The content is sanitized*/}
             </>
-          )}
-        </DialogContent>
+          </DialogContent>
+        )}
       </Dialog>
 
       <AlertDialog
