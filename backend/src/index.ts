@@ -9,8 +9,13 @@ import { ChatBot } from "./services/openai-chatbot";
 import { cors } from "hono/cors";
 import { getConfig } from "./config";
 import type { PageQuery } from "@/helpers/types";
+import { clerkMiddleware, getAuth } from "@hono/clerk-auth";
 
-const app = new Hono().use(logger()).use(cors()).basePath("/api");
+const app = new Hono()
+  .use(logger())
+  .use(cors())
+  .use("*", clerkMiddleware())
+  .basePath("/api");
 
 const createRagService = () => {
   const documentRepository = new TursoDocumentRepository(db);
@@ -18,7 +23,7 @@ const createRagService = () => {
   return new RagService(documentRepository, chunker);
 };
 
-app.post("/chat", async (c) => {
+app.post("public/chat", async (c) => {
   try {
     const body = await c.req.json();
     if (!body["messages"] || !Array.isArray(body["messages"])) {
@@ -42,11 +47,22 @@ app.post("/chat", async (c) => {
   }
 });
 
-app.get("/health", (c) => {
+app.get("/public/health", (c) => {
   return c.text("Hello, Hono!");
 });
 
 app.get("/search/document", async (c) => {
+  const auth = getAuth(c);
+
+  if (!auth?.userId) {
+    return c.json(
+      {
+        message: "You are not logged in.",
+      },
+      401,
+    );
+  }
+
   const query = c.req.query("q");
   if (!query) {
     return c.json(
@@ -62,6 +78,16 @@ app.get("/search/document", async (c) => {
 });
 
 app.post("/document", async (c) => {
+  const auth = getAuth(c);
+
+  if (!auth?.userId) {
+    return c.json(
+      {
+        message: "You are not logged in.",
+      },
+      401,
+    );
+  }
   let jsonBody = null;
   try {
     jsonBody = await c.req.json();
@@ -93,6 +119,16 @@ app.post("/document", async (c) => {
 });
 
 app.get("/document", async (c) => {
+  const auth = getAuth(c);
+
+  if (!auth?.userId) {
+    return c.json(
+      {
+        message: "You are not logged in.",
+      },
+      401,
+    );
+  }
   const { page, pageSize }: PageQuery = {
     page: c.req.query("page") ?? 1,
     pageSize: c.req.query("pageSize") ?? 20,
@@ -108,6 +144,16 @@ app.get("/document", async (c) => {
 });
 
 app.get("/document/:id", async (c) => {
+  const auth = getAuth(c);
+
+  if (!auth?.userId) {
+    return c.json(
+      {
+        message: "You are not logged in.",
+      },
+      401,
+    );
+  }
   const idParam = c.req.param("id");
   const id = Number(idParam);
 
@@ -131,6 +177,16 @@ app.get("/document/:id", async (c) => {
 });
 
 app.put("/document/:id", async (c) => {
+  const auth = getAuth(c);
+
+  if (!auth?.userId) {
+    return c.json(
+      {
+        message: "You are not logged in.",
+      },
+      401,
+    );
+  }
   const idParam = c.req.param("id");
   const id = Number(idParam);
 
@@ -183,6 +239,16 @@ app.put("/document/:id", async (c) => {
 });
 
 app.delete("/document/:id", async (c) => {
+  const auth = getAuth(c);
+
+  if (!auth?.userId) {
+    return c.json(
+      {
+        message: "You are not logged in.",
+      },
+      401,
+    );
+  }
   const idParam = c.req.param("id");
   const id = Number(idParam);
 

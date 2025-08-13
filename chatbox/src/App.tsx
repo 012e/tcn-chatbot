@@ -10,7 +10,8 @@ export default function App() {
   const { messages, sendMessage } = useChat({
     transport: new DefaultChatTransport({
       api:
-        import.meta.env.VITE_CHAT_ENDPOINT ?? "http://localhost:8786/api/chat",
+        import.meta.env.VITE_CHAT_ENDPOINT ??
+        "http://localhost:8786/api/public/chat",
     }),
   });
 

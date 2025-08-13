@@ -16,7 +16,7 @@ export default function Header() {
         <NavigationMenuList>
           <NavigationMenuItem>
             <NavigationMenuLink asChild>
-              <Link to="/example/chat" className={navigationMenuTriggerStyle()}>
+              <Link to="/chat" className={navigationMenuTriggerStyle()}>
                 Chat
               </Link>
             </NavigationMenuLink>

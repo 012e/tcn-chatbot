@@ -90,7 +90,10 @@ export class RagService {
     await this._documentRepository.saveDocument(documentToSave);
   }
 
-  async updateDocument(id: number, document: InsertDocumentCommand): Promise<void> {
+  async updateDocument(
+    id: number,
+    document: InsertDocumentCommand,
+  ): Promise<void> {
     document.content = sanitizeHtml(document.content, {
       allowedAttributes: {
         a: ["href", "title"],

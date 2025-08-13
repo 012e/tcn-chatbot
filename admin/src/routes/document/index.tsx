@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import * as React from "react";
 import { toast } from "sonner";
-import { Trash } from "lucide-react";
+import { Trash, Edit } from "lucide-react";
 import dompurify from "dompurify";
 
 export const Route = createFileRoute("/document/")({
@@ -155,7 +155,7 @@ function RouteComponent() {
               <TableHead>Nội dung</TableHead>
               <TableHead className="w-[180px]">Ngày tạo</TableHead>
               <TableHead className="w-[180px]">Ngày cập nhật</TableHead>
-              <TableHead className="text-right w-[100px]"></TableHead>
+              <TableHead className="text-right w-[160px]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -184,14 +184,29 @@ function RouteComponent() {
                     {new Date(doc.updatedAt).toLocaleString()}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      className="cursor-pointer"
-                      onClick={(e) => onOpenDeleteDialog(e, doc)}
-                    >
-                      Xóa <Trash className="size-4" />
-                    </Button>
+                    <div className="flex gap-2 justify-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate({ to: `/document/${doc.id}/edit` });
+                        }}
+                      >
+                        <Edit className="size-4" />
+                        Sửa
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="cursor-pointer"
+                        onClick={(e) => onOpenDeleteDialog(e, doc)}
+                      >
+                        <Trash className="size-4" />
+                        Xóa
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               );

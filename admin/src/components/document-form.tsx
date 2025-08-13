@@ -5,24 +5,19 @@ import { ArrowLeft, Loader2, Save } from "lucide-react";
 import { useState, useCallback, useEffect } from "react";
 import { toast } from "sonner";
 import Editor from "./editor";
-import { Document } from "@/lib/api";
 
 interface DocumentFormProps {
   initialContent?: string;
-  onSave: (data: Document) => Promise<unknown>;
+  onSave: (data: { content: string }) => Promise<unknown>;
   isUpdate?: boolean;
 }
 
 export function DocumentForm({
   initialContent = "",
   onSave,
-  isUpdate = false,
 }: DocumentFormProps) {
   const navigate = useNavigate();
   const params = useParams({ strict: false });
-  const documentId = isUpdate
-    ? (params as { documentId: string }).documentId
-    : undefined;
   const [content, setContent] = useState(initialContent);
 
   const contentMutation = useMutation({
@@ -37,12 +32,8 @@ export function DocumentForm({
   });
 
   const handleSave = useCallback(() => {
-    if (isUpdate && documentId) {
-      contentMutation.mutate({ documentId, content });
-    } else {
-      contentMutation.mutate({ content });
-    }
-  }, [content, contentMutation, isUpdate, documentId]);
+    contentMutation.mutate({ content });
+  }, [content, contentMutation]);
 
   useEffect(() => {
     setContent(initialContent);

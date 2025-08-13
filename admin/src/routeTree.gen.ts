@@ -9,12 +9,17 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ChatRouteImport } from './routes/chat'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DocumentIndexRouteImport } from './routes/document/index'
-import { Route as ExampleChatRouteImport } from './routes/example.chat'
 import { Route as DocumentNewRouteImport } from './routes/document/new'
 import { Route as DocumentDocumentIdEditRouteImport } from './routes/document/$documentId.edit'
 
+const ChatRoute = ChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -23,11 +28,6 @@ const IndexRoute = IndexRouteImport.update({
 const DocumentIndexRoute = DocumentIndexRouteImport.update({
   id: '/document/',
   path: '/document/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ExampleChatRoute = ExampleChatRouteImport.update({
-  id: '/example/chat',
-  path: '/example/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DocumentNewRoute = DocumentNewRouteImport.update({
@@ -43,23 +43,23 @@ const DocumentDocumentIdEditRoute = DocumentDocumentIdEditRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/chat': typeof ChatRoute
   '/document/new': typeof DocumentNewRoute
-  '/example/chat': typeof ExampleChatRoute
   '/document': typeof DocumentIndexRoute
   '/document/$documentId/edit': typeof DocumentDocumentIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/chat': typeof ChatRoute
   '/document/new': typeof DocumentNewRoute
-  '/example/chat': typeof ExampleChatRoute
   '/document': typeof DocumentIndexRoute
   '/document/$documentId/edit': typeof DocumentDocumentIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/chat': typeof ChatRoute
   '/document/new': typeof DocumentNewRoute
-  '/example/chat': typeof ExampleChatRoute
   '/document/': typeof DocumentIndexRoute
   '/document/$documentId/edit': typeof DocumentDocumentIdEditRoute
 }
@@ -67,36 +67,43 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/chat'
     | '/document/new'
-    | '/example/chat'
     | '/document'
     | '/document/$documentId/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/chat'
     | '/document/new'
-    | '/example/chat'
     | '/document'
     | '/document/$documentId/edit'
   id:
     | '__root__'
     | '/'
+    | '/chat'
     | '/document/new'
-    | '/example/chat'
     | '/document/'
     | '/document/$documentId/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ChatRoute: typeof ChatRoute
   DocumentNewRoute: typeof DocumentNewRoute
-  ExampleChatRoute: typeof ExampleChatRoute
   DocumentIndexRoute: typeof DocumentIndexRoute
   DocumentDocumentIdEditRoute: typeof DocumentDocumentIdEditRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/chat': {
+      id: '/chat'
+      path: '/chat'
+      fullPath: '/chat'
+      preLoaderRoute: typeof ChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -109,13 +116,6 @@ declare module '@tanstack/react-router' {
       path: '/document'
       fullPath: '/document'
       preLoaderRoute: typeof DocumentIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/example/chat': {
-      id: '/example/chat'
-      path: '/example/chat'
-      fullPath: '/example/chat'
-      preLoaderRoute: typeof ExampleChatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/document/new': {
@@ -137,8 +137,8 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ChatRoute: ChatRoute,
   DocumentNewRoute: DocumentNewRoute,
-  ExampleChatRoute: ExampleChatRoute,
   DocumentIndexRoute: DocumentIndexRoute,
   DocumentDocumentIdEditRoute: DocumentDocumentIdEditRoute,
 }

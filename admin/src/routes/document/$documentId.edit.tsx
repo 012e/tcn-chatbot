@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DocumentForm } from "@/components/document-form";
-import { updateDocument, fetchDocumentById } from "@/lib/api";
+import { updateDocument, getDocumentById } from "@/lib/api";
 import { Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/document/$documentId/edit")({
@@ -10,7 +10,7 @@ export const Route = createFileRoute("/document/$documentId/edit")({
     if (!documentId) {
       throw new Error("Document ID is required");
     }
-    const document = await fetchDocumentById(documentId);
+    const document = await getDocumentById(documentId);
     if (!document) {
       throw new Error(`Document with ID ${documentId} not found`);
     }
@@ -28,12 +28,19 @@ export const Route = createFileRoute("/document/$documentId/edit")({
 });
 
 function EditDocumentComponent() {
-  const document = Route.useLoaderData();
+  const doc = Route.useLoaderData();
+  const { documentId } = Route.useParams();
+  const handleDocumentUpdate = async ({ content }: { content: string }) => {
+    if (!documentId) {
+      throw new Error("Document ID is required for update");
+    }
+    await updateDocument({ documentId, content });
+  };
 
   return (
     <DocumentForm
-      initialContent={document.content}
-      onSave={updateDocument}
+      initialContent={doc.content}
+      onSave={handleDocumentUpdate}
       isUpdate={true}
     />
   );

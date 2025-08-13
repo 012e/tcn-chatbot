@@ -137,6 +137,6 @@ function ChatPage() {
   );
 }
 
-export const Route = createFileRoute("/example/chat")({
+export const Route = createFileRoute("/chat")({
   component: ChatPage,
 });
