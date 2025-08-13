@@ -109,6 +109,55 @@ app.get("/document", async (c) => {
   return c.json(result);
 });
 
+app.put("/document/:id", async (c) => {
+  const idParam = c.req.param("id");
+  const id = Number(idParam);
+
+  if (!Number.isInteger(id) || id <= 0) {
+    return c.json({ message: "invalid document id" }, 400);
+  }
+
+  let jsonBody = null;
+  try {
+    jsonBody = await c.req.json();
+  } catch (e) {
+    return c.json({
+      message: "invalid json",
+    }, 400);
+  }
+
+  const updateDocumentCommand = InsertDocumentSchema.safeParse(jsonBody);
+  if (!updateDocumentCommand.success) {
+    return c.json(
+      { message: z.prettifyError(updateDocumentCommand.error) },
+      400,
+    );
+  }
+
+  try {
+    const repo = new TursoDocumentRepository(db);
+    
+    // First check if document exists
+    const existingDocument = await repo.getDocumentById(id);
+    if (!existingDocument) {
+      return c.json({ message: "document not found" }, 404);
+    }
+
+    // Use RAG service to update document with new chunks and embeddings
+    const ragService = createRagService();
+    await ragService.updateDocument(id, {
+      content: updateDocumentCommand.data.content,
+    });
+
+    return c.json({
+      message: "document updated successfully",
+    });
+  } catch (e) {
+    console.error("Error updating document:", e);
+    return c.json({ message: "internal server error" }, 500);
+  }
+});
+
 app.delete("/document/:id", async (c) => {
   const idParam = c.req.param("id");
   const id = Number(idParam);

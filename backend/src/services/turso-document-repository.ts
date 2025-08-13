@@ -43,12 +43,37 @@ export class TursoDocumentRepository implements DocumentRepository {
       throw new Error("Invalid document id");
     }
 
+    const transaction = await this._db.transaction("write");
+
     try {
-      await this._db.execute({
+      // Update the document content and timestamp
+      await transaction.execute({
         sql: "UPDATE documents SET content = ?, updated_at = ? WHERE id = ?",
         args: [document.content, document.updatedAt, document.id],
       });
+
+      // Delete existing chunks for this document
+      await transaction.execute({
+        sql: "DELETE FROM document_chunks WHERE document_id = ?",
+        args: [document.id],
+      });
+
+      // Insert new chunks
+      for (const documentChunk of document.documentChunks) {
+        await transaction.execute({
+          sql: "INSERT INTO document_chunks (document_id, chunk, metadata, embedding) VALUES (?, ?, ?, vector32(?))",
+          args: [
+            document.id,
+            documentChunk.chunk,
+            documentChunk.metadata ?? null,
+            JSON.stringify(documentChunk.embedding),
+          ],
+        });
+      }
+
+      await transaction.commit();
     } catch (error) {
+      await transaction.rollback();
       if (error instanceof LibsqlError) {
         console.error("Database error updating document:", error.message);
       } else {
