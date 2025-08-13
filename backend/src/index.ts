@@ -5,12 +5,10 @@ import z from "zod";
 import { TursoDocumentRepository } from "./services/turso-document-repository";
 import { db } from "./db";
 import { RecursiveChunker } from "./services/recursive-chunker";
-import dotenv from "dotenv";
 import { ChatBot } from "./services/openai-chatbot";
 import { cors } from "hono/cors";
 import { getConfig } from "./config";
 import type { PageQuery } from "@/helpers/types";
-dotenv.config({ path: ".env.local" });
 
 const app = new Hono().use(logger()).use(cors()).basePath("/api");
 
@@ -109,6 +107,29 @@ app.get("/document", async (c) => {
   return c.json(result);
 });
 
+app.get("/document/:id", async (c) => {
+  const idParam = c.req.param("id");
+  const id = Number(idParam);
+
+  if (!Number.isInteger(id) || id <= 0) {
+    return c.json({ message: "invalid document id" }, 400);
+  }
+
+  try {
+    const repo = new TursoDocumentRepository(db);
+    const document = await repo.getDocumentById(id);
+
+    if (!document) {
+      return c.json({ message: "document not found" }, 404);
+    }
+
+    return c.json(document);
+  } catch (e) {
+    console.error("Error fetching document:", e);
+    return c.json({ message: "internal server error" }, 500);
+  }
+});
+
 app.put("/document/:id", async (c) => {
   const idParam = c.req.param("id");
   const id = Number(idParam);
@@ -121,9 +142,12 @@ app.put("/document/:id", async (c) => {
   try {
     jsonBody = await c.req.json();
   } catch (e) {
-    return c.json({
-      message: "invalid json",
-    }, 400);
+    return c.json(
+      {
+        message: "invalid json",
+      },
+      400,
+    );
   }
 
   const updateDocumentCommand = InsertDocumentSchema.safeParse(jsonBody);
@@ -136,7 +160,7 @@ app.put("/document/:id", async (c) => {
 
   try {
     const repo = new TursoDocumentRepository(db);
-    
+
     // First check if document exists
     const existingDocument = await repo.getDocumentById(id);
     if (!existingDocument) {

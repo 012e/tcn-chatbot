@@ -1,6 +1,3 @@
-import dotenv from "dotenv";
-dotenv.config({ path: ".env.local" });
-
 import { z } from "zod";
 
 const configSchema = z
