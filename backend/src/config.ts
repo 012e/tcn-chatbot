@@ -1,3 +1,4 @@
+import { basicAuth } from "hono/basic-auth";
 import { z } from "zod";
 
 const configSchema = z
@@ -8,6 +9,10 @@ const configSchema = z
     chatModel: z.string().default("gpt-4o-mini"),
     tursoDatabaseUrl: z.url().optional(),
     tursoAuthToken: z.string().nonempty().optional(),
+    basicAuth: z.object({
+      username: z.string().nonempty(),
+      password: z.string().nonempty(),
+    }),
   })
   .refine(
     (data) => {
@@ -35,6 +40,10 @@ function parseConfigFromEnv(envSource: Record<string, any>): Config {
     chatModel: envSource["OPENAI_CHAT_MODEL"],
     tursoDatabaseUrl: envSource["TURSO_DATABASE_URL"],
     tursoAuthToken: envSource["TURSO_AUTH_TOKEN"],
+    basicAuth: {
+      username: envSource["BASIC_AUTH_USERNAME"],
+      password: envSource["BASIC_AUTH_PASSWORD"],
+    },
   });
 }
 

@@ -48,13 +48,11 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body className="w-screen h-screen">
-        <ClerkProvider>
-          <Header />
-          {children}
-          <TanStackRouterDevtools />
-          <TanStackQueryLayout />
-          <Toaster expand={true} />
-        </ClerkProvider>
+        <Header />
+        {children}
+        <TanStackRouterDevtools />
+        <TanStackQueryLayout />
+        <Toaster expand={true} />
         <Scripts />
       </body>
     </html>

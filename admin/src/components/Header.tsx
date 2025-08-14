@@ -1,5 +1,4 @@
 import { Link } from "@tanstack/react-router";
-import ClerkHeader from "../integrations/clerk/header-user.tsx";
 
 import {
   NavigationMenu,
@@ -32,9 +31,7 @@ export default function Header() {
         </NavigationMenuList>
       </NavigationMenu>
 
-      <div className="flex gap-2 items-center">
-        <ClerkHeader />
-      </div>
+      <div className="flex gap-2 items-center"></div>
     </header>
   );
 }

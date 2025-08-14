@@ -9,12 +9,24 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as DocumentRouteImport } from './routes/document'
 import { Route as ChatRouteImport } from './routes/chat'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DocumentIndexRouteImport } from './routes/document/index'
 import { Route as DocumentNewRouteImport } from './routes/document/new'
 import { Route as DocumentDocumentIdEditRouteImport } from './routes/document/$documentId.edit'
 
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocumentRoute = DocumentRouteImport.update({
+  id: '/document',
+  path: '/document',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ChatRoute = ChatRouteImport.update({
   id: '/chat',
   path: '/chat',
@@ -26,31 +38,34 @@ const IndexRoute = IndexRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const DocumentIndexRoute = DocumentIndexRouteImport.update({
-  id: '/document/',
-  path: '/document/',
-  getParentRoute: () => rootRouteImport,
+  id: '/',
+  path: '/',
+  getParentRoute: () => DocumentRoute,
 } as any)
 const DocumentNewRoute = DocumentNewRouteImport.update({
-  id: '/document/new',
-  path: '/document/new',
-  getParentRoute: () => rootRouteImport,
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => DocumentRoute,
 } as any)
 const DocumentDocumentIdEditRoute = DocumentDocumentIdEditRouteImport.update({
-  id: '/document/$documentId/edit',
-  path: '/document/$documentId/edit',
-  getParentRoute: () => rootRouteImport,
+  id: '/$documentId/edit',
+  path: '/$documentId/edit',
+  getParentRoute: () => DocumentRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/chat': typeof ChatRoute
+  '/document': typeof DocumentRouteWithChildren
+  '/login': typeof LoginRoute
   '/document/new': typeof DocumentNewRoute
-  '/document': typeof DocumentIndexRoute
+  '/document/': typeof DocumentIndexRoute
   '/document/$documentId/edit': typeof DocumentDocumentIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/chat': typeof ChatRoute
+  '/login': typeof LoginRoute
   '/document/new': typeof DocumentNewRoute
   '/document': typeof DocumentIndexRoute
   '/document/$documentId/edit': typeof DocumentDocumentIdEditRoute
@@ -59,6 +74,8 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/chat': typeof ChatRoute
+  '/document': typeof DocumentRouteWithChildren
+  '/login': typeof LoginRoute
   '/document/new': typeof DocumentNewRoute
   '/document/': typeof DocumentIndexRoute
   '/document/$documentId/edit': typeof DocumentDocumentIdEditRoute
@@ -68,13 +85,16 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/chat'
-    | '/document/new'
     | '/document'
+    | '/login'
+    | '/document/new'
+    | '/document/'
     | '/document/$documentId/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/chat'
+    | '/login'
     | '/document/new'
     | '/document'
     | '/document/$documentId/edit'
@@ -82,6 +102,8 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/chat'
+    | '/document'
+    | '/login'
     | '/document/new'
     | '/document/'
     | '/document/$documentId/edit'
@@ -90,13 +112,26 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ChatRoute: typeof ChatRoute
-  DocumentNewRoute: typeof DocumentNewRoute
-  DocumentIndexRoute: typeof DocumentIndexRoute
-  DocumentDocumentIdEditRoute: typeof DocumentDocumentIdEditRoute
+  DocumentRoute: typeof DocumentRouteWithChildren
+  LoginRoute: typeof LoginRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/document': {
+      id: '/document'
+      path: '/document'
+      fullPath: '/document'
+      preLoaderRoute: typeof DocumentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/chat': {
       id: '/chat'
       path: '/chat'
@@ -113,34 +148,49 @@ declare module '@tanstack/react-router' {
     }
     '/document/': {
       id: '/document/'
-      path: '/document'
-      fullPath: '/document'
+      path: '/'
+      fullPath: '/document/'
       preLoaderRoute: typeof DocumentIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof DocumentRoute
     }
     '/document/new': {
       id: '/document/new'
-      path: '/document/new'
+      path: '/new'
       fullPath: '/document/new'
       preLoaderRoute: typeof DocumentNewRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof DocumentRoute
     }
     '/document/$documentId/edit': {
       id: '/document/$documentId/edit'
-      path: '/document/$documentId/edit'
+      path: '/$documentId/edit'
       fullPath: '/document/$documentId/edit'
       preLoaderRoute: typeof DocumentDocumentIdEditRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof DocumentRoute
     }
   }
 }
 
-const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  ChatRoute: ChatRoute,
+interface DocumentRouteChildren {
+  DocumentNewRoute: typeof DocumentNewRoute
+  DocumentIndexRoute: typeof DocumentIndexRoute
+  DocumentDocumentIdEditRoute: typeof DocumentDocumentIdEditRoute
+}
+
+const DocumentRouteChildren: DocumentRouteChildren = {
   DocumentNewRoute: DocumentNewRoute,
   DocumentIndexRoute: DocumentIndexRoute,
   DocumentDocumentIdEditRoute: DocumentDocumentIdEditRoute,
+}
+
+const DocumentRouteWithChildren = DocumentRoute._addFileChildren(
+  DocumentRouteChildren,
+)
+
+const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
+  ChatRoute: ChatRoute,
+  DocumentRoute: DocumentRouteWithChildren,
+  LoginRoute: LoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

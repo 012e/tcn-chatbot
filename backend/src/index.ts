@@ -9,12 +9,19 @@ import { ChatBot } from "./services/openai-chatbot";
 import { cors } from "hono/cors";
 import { getConfig } from "./config";
 import type { PageQuery } from "@/helpers/types";
-import { clerkMiddleware, getAuth } from "@hono/clerk-auth";
+import { basicAuth } from "hono/basic-auth";
 
+const config = getConfig();
 const app = new Hono()
   .use(logger())
   .use(cors())
-  .use("*", clerkMiddleware())
+  .use(
+    "/api/internal/*",
+    basicAuth({
+      username: config.basicAuth.username,
+      password: config.basicAuth.password,
+    }),
+  )
   .basePath("/api");
 
 const createRagService = () => {
@@ -23,7 +30,7 @@ const createRagService = () => {
   return new RagService(documentRepository, chunker);
 };
 
-app.post("public/chat", async (c) => {
+app.post("/public/chat", async (c) => {
   try {
     const body = await c.req.json();
     if (!body["messages"] || !Array.isArray(body["messages"])) {
@@ -51,18 +58,7 @@ app.get("/public/health", (c) => {
   return c.text("Hello, Hono!");
 });
 
-app.get("/search/document", async (c) => {
-  const auth = getAuth(c);
-
-  if (!auth?.userId) {
-    return c.json(
-      {
-        message: "You are not logged in.",
-      },
-      401,
-    );
-  }
-
+app.get("/internal/search/document", async (c) => {
   const query = c.req.query("q");
   if (!query) {
     return c.json(
@@ -77,17 +73,7 @@ app.get("/search/document", async (c) => {
   return c.json(results);
 });
 
-app.post("/document", async (c) => {
-  const auth = getAuth(c);
-
-  if (!auth?.userId) {
-    return c.json(
-      {
-        message: "You are not logged in.",
-      },
-      401,
-    );
-  }
+app.post("/internal/document", async (c) => {
   let jsonBody = null;
   try {
     jsonBody = await c.req.json();
@@ -118,17 +104,7 @@ app.post("/document", async (c) => {
   );
 });
 
-app.get("/document", async (c) => {
-  const auth = getAuth(c);
-
-  if (!auth?.userId) {
-    return c.json(
-      {
-        message: "You are not logged in.",
-      },
-      401,
-    );
-  }
+app.get("/internal/document", async (c) => {
   const { page, pageSize }: PageQuery = {
     page: c.req.query("page") ?? 1,
     pageSize: c.req.query("pageSize") ?? 20,
@@ -143,17 +119,7 @@ app.get("/document", async (c) => {
   return c.json(result);
 });
 
-app.get("/document/:id", async (c) => {
-  const auth = getAuth(c);
-
-  if (!auth?.userId) {
-    return c.json(
-      {
-        message: "You are not logged in.",
-      },
-      401,
-    );
-  }
+app.get("/internal/document/:id", async (c) => {
   const idParam = c.req.param("id");
   const id = Number(idParam);
 
@@ -176,17 +142,7 @@ app.get("/document/:id", async (c) => {
   }
 });
 
-app.put("/document/:id", async (c) => {
-  const auth = getAuth(c);
-
-  if (!auth?.userId) {
-    return c.json(
-      {
-        message: "You are not logged in.",
-      },
-      401,
-    );
-  }
+app.put("/internal/document/:id", async (c) => {
   const idParam = c.req.param("id");
   const id = Number(idParam);
 
@@ -216,14 +172,10 @@ app.put("/document/:id", async (c) => {
 
   try {
     const repo = new TursoDocumentRepository(db);
-
-    // First check if document exists
     const existingDocument = await repo.getDocumentById(id);
     if (!existingDocument) {
       return c.json({ message: "document not found" }, 404);
     }
-
-    // Use RAG service to update document with new chunks and embeddings
     const ragService = createRagService();
     await ragService.updateDocument(id, {
       content: updateDocumentCommand.data.content,
@@ -238,17 +190,7 @@ app.put("/document/:id", async (c) => {
   }
 });
 
-app.delete("/document/:id", async (c) => {
-  const auth = getAuth(c);
-
-  if (!auth?.userId) {
-    return c.json(
-      {
-        message: "You are not logged in.",
-      },
-      401,
-    );
-  }
+app.delete("/internal/document/:id", async (c) => {
   const idParam = c.req.param("id");
   const id = Number(idParam);
 

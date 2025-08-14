@@ -1,4 +1,6 @@
+import { loginCredentialAtom } from "@/store/login-credential";
 import axios from "axios";
+import { createStore, getDefaultStore } from "jotai";
 export type Document = {
   id: number;
   content: string;
@@ -17,6 +19,8 @@ export type PageResult<T> = {
 const API_BASE =
   import.meta.env.VITE_BACKEND_ENDPOINT || "http://localhost:8787/api";
 
+const store = getDefaultStore();
+
 const axiosInstance = axios.create({
   baseURL: API_BASE,
   headers: {
@@ -24,13 +28,27 @@ const axiosInstance = axios.create({
   },
 });
 
+axiosInstance.interceptors.request.use((config) => {
+  const basicAuth = store.get(loginCredentialAtom);
+  if (basicAuth && basicAuth.username && basicAuth.password) {
+    config.auth = {
+      username: basicAuth.username,
+      password: basicAuth.password,
+    };
+  }
+  return config;
+});
+
 export async function listDocuments(params?: {
   page?: number;
   pageSize?: number;
 }) {
-  const { data } = await axiosInstance.get<PageResult<Document>>("/document", {
-    params,
-  });
+  const { data } = await axiosInstance.get<PageResult<Document>>(
+    "/internal/document",
+    {
+      params,
+    },
+  );
   return data;
 }
 
@@ -39,7 +57,9 @@ export async function deleteDocument(id: number) {
 }
 
 export async function getDocumentById(id: string): Promise<Document> {
-  const { data } = await axiosInstance.get<Document>(`/document/${id}`);
+  const { data } = await axiosInstance.get<Document>(
+    `/internal/document/${id}`,
+  );
   return data;
 }
 
@@ -50,9 +70,9 @@ export async function updateDocument({
   documentId: string;
   content: string;
 }) {
-  await axiosInstance.put(`/document/${documentId}`, { content });
+  await axiosInstance.put(`/internal/document/${documentId}`, { content });
 }
 
 export async function createDocument(input: { content: string }) {
-  await axiosInstance.post("/document", input);
+  await axiosInstance.post("/internal/document", input);
 }
